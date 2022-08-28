@@ -1,29 +1,112 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
-import { useDispatch, useSelector } from "react-redux";
-import { submitHandlar } from "../../features/auth/authSlice";
+import { Link, useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import { useDispatch } from "react-redux";
+import { auth, db, storage } from "../../config/Firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { ref } from "firebase/storage";
+import { login } from "../../store/authSlice";
+import { async } from "@firebase/util";
 
 export default function Register() {
-  const isProcessing = useSelector((state) => state.auth.isProcessing);
-  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
   const [state, setState] = useState({});
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     setState((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    console.log("file ", state);
   };
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    dispatch(submitHandlar(state));
+    const {
+      firstName,
+      lastName,
+      userName,
+      email,
+      password,
+      confirmPass,
+      mobile,
+      country,
+      city,
+      countryState,
+      zipcode,
+      profilePic,
+      turmAndCondition,
+    } = state;
+
+    if (
+      !firstName &&
+      !lastName &&
+      !userName &&
+      !email &&
+      !password &&
+      !confirmPass &&
+      !mobile &&
+      !country &&
+      !city &&
+      !countryState &&
+      !zipcode &&
+      !profilePic &&
+      !turmAndCondition
+    ) {
+      setError("Fill The All Input Feilds");
+    } else {
+      e.preventDefault();
+      setIsProcessing(true);
+      await createUserWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          const user = userCredential.user;
+          const fullName = (user.displayName = `${firstName} ${lastName}`);
+          user.phoneNumber = state.mobile;
+          user.photoURL = addPhotOnfireStorage(state.profilePic);
+          console.log("userCredential", user);
+          toast.success("Account Created");
+          setState((prev) => ({ ...prev, uid: user.uid, fullName }));
+          addDocOnFirebase(state);
+          navigate("/");
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          toast.error(errorCode, errorMessage);
+        })
+        .finally(() => {
+          setIsProcessing(false);
+        });
+    }
   };
+  const addPhotOnfireStorage = () => {
+    const mountainsRef = ref(storage, "mountains.jpg");
+
+    // Create a reference to 'images/mountains.jpg'
+    const mountainImagesRef = ref(storage, "images/mountains.jpg");
+
+    // While the file names are the same, the references point to different files
+    // mountainsRef.name === mountainImagesRef.name;           // true
+    // mountainsRef.fullPath === mountainImagesRef.fullPath;   // false
+  };
+  const addDocOnFirebase = async (state) => {
+    // const  uid = Math.random().tostring(36).slice(2);
+    console.log("addDocOnFierbase123", state);
+    try {
+      await setDoc(doc(db, "users", "Two"), state);
+    } catch (error) {
+      toast.error(error);
+    }
+  };
+
   return (
-    <div className="container d-flex m-auto justify-content-center align-items-center">
+    <div className="container mt-5 d-flex m-auto justify-content-center align-items-center">
       <div className="m-2 p-3 shadow col-md-6">
         <div className="row text-center">
           <h1> Register your Account</h1>
         </div>
         <div className="row">
-          <form className="row g-3">
+          <fodrm className="row g-3" method="post">
             <div className="col-12">
               <label for="validationServer01" className="form-label">
                 First name
@@ -237,8 +320,8 @@ export default function Register() {
               <input
                 onChange={handleChange}
                 name="profilePic"
-                value={state.profilePic}
                 type="file"
+                value={state.profilePic}
                 className="form-control"
                 id="validationServer05"
                 aria-describedby="validationServer05Feedback"
@@ -288,7 +371,10 @@ export default function Register() {
               )}
               <ToastContainer />
             </div>
-          </form>
+          </fodrm>
+        </div>
+        <div className="col-12 my-3 fw-bold">
+          <span className="fw-bold text-danger">{error}</span>
         </div>
         <div className="col-12 my-3 fw-bold">
           <Link to="/login">Login Account if you have Registered Account</Link>

@@ -1,19 +1,35 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
-import { useDispatch, useSelector } from "react-redux/es/exports";
-import { loginHandler } from "../../features/auth/authSlice";
-export default function Register() {
-  const dispatch = useDispatch();
-  const isProcessing = useSelector((store)=>store.auth.isProcessing)
-  const [state, setState] = useState({});
+import { Link, useNavigate } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../../config/Firebase";
 
+export default function Register() {
+  const navigate = useNavigate();
+
+  const [state, setState] = useState({});
+  const [isProcessing, setIsProcessing] = useState(false);
   const changeHandlar = (e) => {
     setState((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
   const submitHandlar = async (e) => {
     e.preventDefault();
-    dispatch(loginHandler(state));
+    toast("Loading...");
+    setIsProcessing(true);
+    await signInWithEmailAndPassword(auth, state.email, state.password)
+      .then((userCredential) => {
+        const user = userCredential.user;
+        toast.success("ACCOUNT lOGIN SUCCESSFULY");
+        navigate('/')
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        toast.error(`${(errorCode, errorMessage)}`);
+      })
+      .finally(() => {
+        setIsProcessing(false)
+      });
   };
   return (
     <div

@@ -1,9 +1,9 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux/es/exports";
-import { login } from "../auth/authSlice";
 import { auth } from "../../config/Firebase";
 import { signOut } from "firebase/auth";
+import { logout } from "../../store/authSlice";
 
 export default function NavbarBootStcrap() {
   const navigate = useNavigate();
@@ -11,22 +11,29 @@ export default function NavbarBootStcrap() {
   const isAuthentication = useSelector((state) => state.auth.isAuthentication);
   console.log("navbar bootstrap useSelector get state.auth", isAuthentication);
   const logoutHandlar = () => {
-    signOut(auth)
+    signOut(auth);
+    navigate("/login");
+    dispatch(logout())
+  };
+  
+  const AddProduct = () => {
+    navigate("/addProduct");
   };
   const loginHandlar = () => {
-    navigate("/login")
+    navigate("/login");
   };
   return (
     <nav className="navbar navbar-expand-lg fixed-top navbar-dark bg-dark d-flex justify-content-center">
       <div className="container-fluid text-light">
-        <Link className="navbar-brand" to="#">
+        <Link className="navbar-brand" to="/">
           <img
-            src="https://getbootstrap.com/docs/5.2/assets/brand/bootstrap-logo-shadow.png"
+            src="https://cdn-icons-png.flaticon.com/512/609/609803.png"
             alt=""
             width="30"
             height="24"
             className="d-inline-block align-text-top"
           />
+          Real-Estate
         </Link>
         <button
           className="navbar-toggler"
@@ -42,19 +49,19 @@ export default function NavbarBootStcrap() {
         <div className="collapse navbar-collapse" id="navbarSupportedContent">
           <ul className="navbar-nav me-auto mb-2 mb-lg-0">
             <li className="nav-item">
-              <a className="nav-link active" aria-current="page" to="#">
+              <Link className="nav-link active" aria-current="page" to="/">
                 Home
-              </a>
+              </Link>
             </li>
             <li className="nav-item">
-              <a className="nav-link" aria-current="page" to="#">
+              <Link className="nav-link" aria-current="page" to="/contact">
                 Contact
-              </a>
+              </Link>
             </li>
             <li className="nav-item">
-              <a className="nav-link" aria-current="page" to="#">
+              <Link className="nav-link" aria-current="page" to="/about">
                 About
-              </a>
+              </Link>
             </li>
             <li className="nav-item">
               <a className="nav-link" to="#">
@@ -111,8 +118,8 @@ export default function NavbarBootStcrap() {
           <div>
             {isAuthentication ? (
               <>
-                <button className="btn mx-2 mt-md-0 mt-2 btn-outline-primary">
-                  Dashboard
+                <button onClick={AddProduct} className="btn mx-2 mt-md-0 mt-2 btn-outline-primary">
+                  Add Product
                 </button>
                 <button
                   onClick={logoutHandlar}
